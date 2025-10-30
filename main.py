@@ -119,7 +119,7 @@ class AcademicTerm:
     term_code: str
 
 
-def CreateJsonFile(info_list: list[SeminarInfo], student_id: str):
+def GenerateJsFile(info_list: list[SeminarInfo], student_id: str):
 
     def GetAcademicTerm(date_str: str) -> AcademicTerm:
         """
@@ -174,12 +174,34 @@ def CreateJsonFile(info_list: list[SeminarInfo], student_id: str):
         form.ZJR = info.spearker
         form_list.append(form)
 
+    json_str = json.dumps([asdict(d) for d in form_list],
+                          ensure_ascii=False,
+                          indent=2)
+
     # 写入json文件
     with open('output.json', 'w', encoding='utf-8') as f:
         json.dump([asdict(d) for d in form_list],
                   f,
                   ensure_ascii=False,
                   indent=2)
+    try:
+        with open('./index.js', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # 替换：const seminarInfoArr = [] 为 const seminarInfoArr = [ ... ]
+        new_content = content.replace('const seminarInfoArr = []',
+                                      f'const seminarInfoArr = {json_str}', 1)
+
+        # 写回文件
+        with open('./output.js', 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        print("✅ JS 文件已成功生成！")
+
+    except FileNotFoundError:
+        print(f"❌ 文件未找到: index.js")
+    except Exception as e:
+        print(f"❌ 发生错误: {e}")
 
 
 def main(student_id: str):
@@ -203,7 +225,7 @@ def main(student_id: str):
         raise Exception("未找到任何 .eml 文件")
 
     info_list = [ParseEml(file_path) for file_path in file_path_list]
-    CreateJsonFile(info_list, student_id)
+    GenerateJsFile(info_list, student_id)
 
 
 # 使用示例

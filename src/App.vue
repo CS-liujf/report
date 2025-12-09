@@ -2,9 +2,9 @@
 <template>
   <naive-provider>
     <div class="container">
-      <n-card title="学术报告记录生成工具" header-style="font-size:40px;" class="main-card" hoverable>
+      <n-card title="学术报告记录生成工具" header-style="font-size:42px;" class="main-card" hoverable>
         <template #header-extra>
-          <mode-switch size="35" />
+          <mode-switch size="36" />
         </template>
         <n-form label-placement="left" :rules="rules" ref="formRef">
           <!-- 学号输入 -->
@@ -13,7 +13,7 @@
           </n-form-item>
 
           <!-- 文件上传 -->
-          <n-form-item label="上传EML文件" required>
+          <n-form-item label="解析EML文件" required>
             <n-upload multiple directory-dnd>
               <n-upload-dragger>
                 <div style="margin-bottom: 12px">
@@ -39,13 +39,47 @@
           </n-form-item>
         </n-form>
 
+
+        <n-divider />
+
         <!-- 代码显示区域 -->
-        <template v-if="codeContent">
-          <n-divider title="生成的代码" />
-          <n-code language="javascript" :code="codeContent" word-wrap />
-          <n-button type="success" size="small" class="copy-button" @click="copyToClipboard">
-            复制代码
-          </n-button>
+        <n-card title="生成的代码" header-style="font-size:28px">
+          <template #header-extra>
+            <n-button type="success" strong secondary size="small" @click="copyToClipboard"
+              :disabled="codeContent.length === 0">
+              <template #icon>
+                <n-icon>
+                  <CopyIcon />
+                </n-icon>
+              </template>
+              复制
+            </n-button>
+          </template>
+
+          <template v-if="codeContent">
+            <n-code code="
+function sleep (ms = 1000) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}" language="javascript" show-line-numbers />
+          </template>
+
+          <template v-else>
+            <n-empty description="先输入学号和上传邮件" size="huge" />
+          </template>
+        </n-card>
+
+
+        <template #footer>
+          <div style="display: flex; justify-content: center;">
+            <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank">
+              fly
+              <template #icon>
+                <NIcon>
+                  <GithubIcon />
+                </NIcon>
+              </template>
+            </n-button>
+          </div>
         </template>
       </n-card>
     </div>
@@ -53,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
+import { ArchiveOutline as ArchiveIcon, Copy as CopyIcon, LogoGithub as GithubIcon } from '@vicons/ionicons5'
 import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';

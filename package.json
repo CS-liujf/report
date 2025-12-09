@@ -11,6 +11,7 @@
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
     "axios": "^1.13.2",
+    "highlight.js": "^11.11.1",
     "naive-ui": "^2.43.2",
     "vfonts": "^0.0.3",
     "vue": "^3.5.25"

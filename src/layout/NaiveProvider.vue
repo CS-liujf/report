@@ -1,8 +1,5 @@
 <template>
-  <n-config-provider
-      :theme="theme"
-      :theme-overrides="themeOverrides"
-  >
+  <n-config-provider :theme="theme" :theme-overrides="themeOverrides" :hljs="hljs">
     <n-loading-bar-provider>
       <n-message-provider>
         <n-dialog-provider>
@@ -20,6 +17,12 @@
 import { GlobalThemeOverrides } from 'naive-ui'
 import { theme } from '@/utils/switchMode'
 import ProviderContent from './ProviderContent.vue'
+
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+
+hljs.registerLanguage('javascript', javascript);
+
 const themeOverrides: GlobalThemeOverrides = {
   LoadingBar: {
     colorLoading: '#1a91ff'
@@ -30,5 +33,4 @@ const themeOverrides: GlobalThemeOverrides = {
   }
 }
 </script>
-<style scoped>
-</style>
+<style scoped></style>

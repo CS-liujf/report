@@ -2,7 +2,8 @@
 <template>
   <naive-provider>
     <div class="container">
-      <n-card title="学术报告记录生成工具" header-style="font-size:42px;" class="main-card" hoverable>
+      <n-card title="学术报告记录生成工具" header-style="font-size:42px;" footer-style="display: flex; justify-content: center;"
+        class="main-card" hoverable>
         <template #header-extra>
           <mode-switch size="36" />
         </template>
@@ -70,16 +71,14 @@ function sleep (ms = 1000) {
 
 
         <template #footer>
-          <div style="display: flex; justify-content: center;">
-            <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank">
-              fly
-              <template #icon>
-                <NIcon>
-                  <GithubIcon />
-                </NIcon>
-              </template>
-            </n-button>
-          </div>
+          <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank" :theme-overrides="githubButtonThemeOverides">
+            fly
+            <template #icon>
+              <NIcon>
+                <GithubIcon />
+              </NIcon>
+            </template>
+          </n-button>
         </template>
       </n-card>
     </div>
@@ -92,7 +91,14 @@ import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormInst, FormRules } from 'naive-ui';
+import { FormInst, FormRules, ButtonProps } from 'naive-ui';
+
+type ButtonThemeOverrides = NonNullable<ButtonProps['themeOverrides']>
+const githubButtonThemeOverides: ButtonThemeOverrides = {
+  textColorTextFocus: '#FCB040FF',
+  textColorTextHover: '#FCB040FF'
+}
+
 
 // 定义类型接口(翻译原先的python脚本)
 interface SeminarInfo {

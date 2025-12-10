@@ -119,14 +119,14 @@ const githubButtonThemeOverides: ButtonThemeOverrides = {
 
 // 定义类型接口(翻译原先的python脚本)
 interface SeminarInfo {
-  date: string;
+  date: Date;
   location: string;
   speaker: string;
   subject: string;
 }
 
 interface CalendarInfo {
-  dateStr: string;
+  date: Date;
   location: string;
 }
 
@@ -235,7 +235,7 @@ const codeContent = ref<string>('');
 // 解析EML文件内容
 const parseEml = (content: string): SeminarInfo => {
   const info: SeminarInfo = {
-    date: '',
+    date: new Date(),
     location: '',
     speaker: '',
     subject: ''
@@ -270,7 +270,7 @@ const parseEml = (content: string): SeminarInfo => {
 
   // 解析日历信息
   const calInfo = extractDateAndLocationFromCalendar(calendarStr);
-  info.date = calInfo.dateStr;
+  info.date = calInfo.date;
   info.location = calInfo.location;
 
   return info;
@@ -279,18 +279,14 @@ const parseEml = (content: string): SeminarInfo => {
 // 从日历中提取日期和地点
 const extractDateAndLocationFromCalendar = (calendarStr: string): CalendarInfo => {
   const calInfo: CalendarInfo = {
-    dateStr: '',
+    date: new Date(),
     location: '未指定地点'
   };
 
   if (!calendarStr) return calInfo;
 
   // 提取开始时间
-  const dtStartMatch = calendarStr.match(/DTSTART.*?:(\d{4})(\d{2})(\d{2})/);
-  if (dtStartMatch) {
-    const [, year, month, day] = dtStartMatch;
-    calInfo.dateStr = `${year}-${month}-${day}`;
-  }
+
 
   // 提取地点
   const locationMatch = calendarStr.match(/LOCATION.*?:(.*?)(?:\r?\n|$)/i);
@@ -306,32 +302,28 @@ const extractDateAndLocationFromCalendar = (calendarStr: string): CalendarInfo =
 };
 
 // 获取学年学期信息
-const getAcademicTerm = (dateStr: string): AcademicTerm => {
-  try {
-    const dt = new Date(dateStr);
-    const year = dt.getFullYear();
-    const month = dt.getMonth() + 1; // 月份从0开始
+const getAcademicTerm = (date: Date): AcademicTerm => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
 
-    let termStr: string, termCode: string;
+  let termStr: string, termCode: string;
 
-    if (month >= 9 || month < 2) {
-      // 9月到12月：第一学期
-      termStr = `${year}-${year + 1}学年 第一学期`;
-      termCode = (year * 10 + 1).toString();
-    } else if (month === 7 || month === 8) {
-      // 7月和8月：第三学期
-      termStr = `${year - 1}-${year}学年 第三学期`;
-      termCode = ((year - 1) * 10 + 3).toString();
-    } else {
-      // 2月到6月：第二学期
-      termStr = `${year - 1}-${year}学年 第二学期`;
-      termCode = ((year - 1) * 10 + 2).toString();
-    }
-
-    return { termStr, termCode };
-  } catch (e) {
-    throw new Error(`日期格式错误，应为 YYYY-MM-DD: ${dateStr}`);
+  if (month >= 9 || month < 2) {
+    // 9月到12月：第一学期
+    termStr = `${year}-${year + 1}学年 第一学期`;
+    termCode = (year * 10 + 1).toString();
+  } else if (month === 7 || month === 8) {
+    // 7月和8月：第三学期
+    termStr = `${year - 1}-${year}学年 第三学期`;
+    termCode = ((year - 1) * 10 + 3).toString();
+  } else {
+    // 2月到6月：第二学期
+    termStr = `${year - 1}-${year}学年 第二学期`;
+    termCode = ((year - 1) * 10 + 2).toString();
   }
+
+  return { termStr, termCode };
+
 };
 
 // 读取文件内容
@@ -377,7 +369,7 @@ const handleSubmit = async () => {
         XNXQ_DISPLAY: academicTerm.termStr,
         XNXQ: academicTerm.termCode,
         BGMC: info.subject,
-        BGSJ: info.date,
+        BGSJ: info.date.toISOString().slice(0, 10),
         BGDD: info.location,
         ZJR: info.speaker,
         SFSYYY_DISPLAY: "是",

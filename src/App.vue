@@ -9,12 +9,12 @@
         </template>
         <n-form label-placement="left" :rules="rules" ref="formRef" :model="formData">
           <!-- 学号输入 -->
-          <n-form-item label="学号" path="studentId">
+          <n-form-item label="学号" path="studentId" label-style="font-size: 1.1rem">
             <n-input v-model:value="formData.studentId" placeholder="请输入您的学号" />
           </n-form-item>
 
           <!-- 文件上传 -->
-          <n-form-item label="解析EML文件" required>
+          <n-form-item label="解析EML文件" required label-style="font-size: 1.1rem">
             <n-upload multiple directory-dnd v-model:file-list="formData.emlFiles">
               <n-upload-dragger>
                 <div style="margin-bottom: 12px">
@@ -327,7 +327,7 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
 
 .main-card {
   max-width: 800px;
-  padding: 1.5rem;
+  padding: 0rem 1.5rem; 
   margin-top: 6rem;
 }
 

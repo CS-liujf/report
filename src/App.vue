@@ -7,7 +7,7 @@
         <template #header-extra>
           <mode-switch size="36" />
         </template>
-        <n-form label-placement="left" :rules="rules" ref="formRef">
+        <n-form label-placement="left" :rules="rules" ref="formRef" :model="formData">
           <!-- 学号输入 -->
           <n-form-item label="学号" path="studentId">
             <n-input v-model:value="formData.studentId" placeholder="请输入您的学号" />
@@ -15,7 +15,7 @@
 
           <!-- 文件上传 -->
           <n-form-item label="解析EML文件" required>
-            <n-upload multiple directory-dnd>
+            <n-upload multiple directory-dnd v-model:file-list="formData.emlFiles">
               <n-upload-dragger>
                 <div style="margin-bottom: 12px">
                   <n-icon size="48" :depth="3">
@@ -107,7 +107,7 @@ import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormInst, FormRules, ButtonProps } from 'naive-ui';
+import { FormInst, FormRules, ButtonProps, type UploadFileInfo } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
 
 type ButtonThemeOverrides = NonNullable<ButtonProps['themeOverrides']>
@@ -125,10 +125,6 @@ interface SeminarInfo {
   subject: string;
 }
 
-interface CalendarInfo {
-  date: Date;
-  location: string;
-}
 
 interface AcademicTerm {
   termStr: string;
@@ -172,7 +168,7 @@ interface SeminarInfoForm {
 
 interface FormData {
   studentId: string;
-  emlFiles: File[];
+  emlFiles: UploadFileInfo[];
 }
 
 interface FileItem {
@@ -205,35 +201,14 @@ const validateForm = async () => {
   })
 }
 
-// 处理文件上传前验证
-const beforeUpload = (file: File) => {
-  const isEml = file.name.toLowerCase().endsWith('.eml');
-  if (!isEml) {
-    window.$message.error('请上传.eml格式的文件');
-    return false;
-  }
 
-  // 添加文件到列表
-  fileList.value.push({
-    id: Date.now().toString(),
-    name: file.name,
-    file: file
-  });
-  return false; // 阻止自动上传，我们只需要文件内容
-};
 
-// 移除文件
-const handleRemove = (id: string) => {
-  fileList.value = fileList.value.filter(item => item.id !== id);
-};
-
-// 文件上传相关
-const fileList = ref<FileItem[]>([]);
+// 生成发送请求的代码
 const loading = ref<boolean>(false);
 const codeContent = ref<string>('');
 
 // 解析EML文件内容
-const parseEml = (content: string): SeminarInfo => {
+const parseEml = (emlFile: File): SeminarInfo => {
   const info: SeminarInfo = {
     date: new Date(),
     location: '',
@@ -241,64 +216,12 @@ const parseEml = (content: string): SeminarInfo => {
     subject: ''
   };
 
-  // 提取主题
-  const subjectMatch = content.match(/Subject: (.*?)\r?\n/m);
-  if (subjectMatch) {
-    info.subject = subjectMatch[1].replace(/^\[[^\]]*\]\s*/, '');
-  }
+  // 解析日历，提取主题、时间和地点
 
-  // 提取邮件正文和日历信息
-  let body = '';
-  let calendarStr = '';
-  const parts = content.split(/\r?\n--/);
 
-  parts.forEach(part => {
-    if (part.includes('Content-Type: text/calendar') || part.includes('Content-Type: application/ics')) {
-      const calendarContent = part.split(/\r?\n\r?\n/)[1] || '';
-      calendarStr = calendarContent.replace(/\r?\n--.*/s, '');
-    } else if (part.includes('Content-Type: text/plain') && !part.includes('attachment')) {
-      const textContent = part.split(/\r?\n\r?\n/)[1] || '';
-      body = textContent.replace(/\r?\n--.*/s, '');
-    }
-  });
-
-  // 提取演讲者
-  const speakerMatch = body.match(/^(?:Speaker|演讲者):\s*(.+)$/im);
-  if (speakerMatch) {
-    info.speaker = speakerMatch[1].trim();
-  }
-
-  // 解析日历信息
-  const calInfo = extractDateAndLocationFromCalendar(calendarStr);
-  info.date = calInfo.date;
-  info.location = calInfo.location;
+  // 从正文提取演讲者
 
   return info;
-};
-
-// 从日历中提取日期和地点
-const extractDateAndLocationFromCalendar = (calendarStr: string): CalendarInfo => {
-  const calInfo: CalendarInfo = {
-    date: new Date(),
-    location: '未指定地点'
-  };
-
-  if (!calendarStr) return calInfo;
-
-  // 提取开始时间
-
-
-  // 提取地点
-  const locationMatch = calendarStr.match(/LOCATION.*?:(.*?)(?:\r?\n|$)/i);
-  if (locationMatch) {
-    calInfo.location = decodeURIComponent(
-      locationMatch[1].replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-      )
-    );
-  }
-
-  return calInfo;
 };
 
 // 获取学年学期信息
@@ -309,40 +232,22 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
   let termStr: string, termCode: string;
 
   if (month >= 9 || month < 2) {
-    // 9月到12月：第一学期
+    // 9月到来年1月：第一学期
     termStr = `${year}-${year + 1}学年 第一学期`;
-    termCode = (year * 10 + 1).toString();
+    termCode = `${year * 10 + 1}`; // y1
   } else if (month === 7 || month === 8) {
     // 7月和8月：第三学期
     termStr = `${year - 1}-${year}学年 第三学期`;
-    termCode = ((year - 1) * 10 + 3).toString();
+    termCode = `${(year - 1) * 10 + 3}`; // (y-1)3
   } else {
     // 2月到6月：第二学期
     termStr = `${year - 1}-${year}学年 第二学期`;
-    termCode = ((year - 1) * 10 + 2).toString();
+    termCode = `${(year - 1) * 10 + 2}`; // (y-1)2
   }
 
   return { termStr, termCode };
-
 };
 
-// 读取文件内容
-const readFileContent = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (typeof e.target?.result === 'string') {
-        resolve(e.target.result);
-      } else {
-        reject(new Error('无法读取文件内容'));
-      }
-    };
-    reader.onerror = () => reject(new Error('文件读取失败'));
-    reader.readAsText(file);
-  });
-};
-
-// 处理表单提交
 const handleSubmit = async () => {
   loading.value = true;
   try {
@@ -350,9 +255,8 @@ const handleSubmit = async () => {
     codeContent.value = '';
     // 解析所有上传的eml文件
     const infoList: SeminarInfo[] = [];
-    for (const fileItem of fileList.value) {
-      const content = await readFileContent(fileItem.file);
-      const seminarInfo = parseEml(content);
+    for (const fileItem of formData.value.emlFiles) {
+      const seminarInfo = parseEml(fileItem.file!);
       infoList.push(seminarInfo);
     }
 

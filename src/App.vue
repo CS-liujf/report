@@ -45,16 +45,31 @@
 
         <!-- 代码显示区域 -->
         <n-card title="生成的代码" header-style="font-size:28px">
+
+          <!-- 复制按钮 -->
           <template #header-extra>
-            <n-button type="success" strong secondary size="small" @click="copyToClipboard"
-              :disabled="codeContent.length === 0">
-              <template #icon>
-                <n-icon>
-                  <CopyIcon />
-                </n-icon>
+            <n-popover placement="bottom" trigger="click" ref="copyPopRef">
+              <template #trigger>
+                <n-button type="success" strong secondary size="small" @click="copyToClipboard"
+                  :disabled="codeContent.length === 0">
+                  <template #icon>
+                    <n-icon>
+                      <CopyIcon />
+                    </n-icon>
+                  </template>
+                  复制
+                </n-button>
               </template>
-              复制
-            </n-button>
+
+              <n-flex align="center" :size="4">
+                <n-icon color="#36AD6AFF" size="1.2rem">
+                  <SuccessIcon />
+                </n-icon>
+                <n-text style="font-size: 0.9rem">
+                  代码已复制到剪贴板
+                </n-text>
+              </n-flex>
+            </n-popover>
           </template>
 
           <template v-if="codeContent">
@@ -87,7 +102,7 @@ function sleep (ms = 1000) {
 </template>
 
 <script setup lang="ts">
-import { ArchiveOutline as ArchiveIcon, Copy as CopyIcon, LogoGithub as GithubIcon } from '@vicons/ionicons5'
+import { ArchiveOutline as ArchiveIcon, Copy as CopyIcon, LogoGithub as GithubIcon, CheckmarkCircle as SuccessIcon } from '@vicons/ionicons5'
 import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
@@ -120,19 +135,37 @@ interface AcademicTerm {
   termCode: string;
 }
 
+/**
+ * 学术报告信息表单接口
+ * @description 用于描述学术报告提交/展示的核心字段
+ */
 interface SeminarInfoForm {
+  /** 唯一标识 ID */
   WID: string;
+  /** 审核状态显示值 */
   SHZT_DISPLAY: string;
+  /** 审核状态编码 */
   SHZT: string;
+
   TBLX: string;
+
+  /** 学号（学生唯一标识） */
   XH: string;
+  /** 附件 */
   FJ: string;
+  /** 学年学期显示值 */
   XNXQ_DISPLAY: string;
+  /** 学年学期编码（如：202401） */
   XNXQ: string;
+  /** 报告名称（学术报告的标题） */
   BGMC: string;
+  /** 报告时间（格式：YYYY-MM-DD HH:mm:ss） */
   BGSJ: string;
+  /** 报告地点 */
   BGDD: string;
+  /** 主讲人名字 */
   ZJR: string;
+
   SFSYYY_DISPLAY: string;
   SFSYYY: string;
 }
@@ -171,6 +204,28 @@ const validateForm = async () => {
     }
   })
 }
+
+// 处理文件上传前验证
+const beforeUpload = (file: File) => {
+  const isEml = file.name.toLowerCase().endsWith('.eml');
+  if (!isEml) {
+    window.$message.error('请上传.eml格式的文件');
+    return false;
+  }
+
+  // 添加文件到列表
+  fileList.value.push({
+    id: Date.now().toString(),
+    name: file.name,
+    file: file
+  });
+  return false; // 阻止自动上传，我们只需要文件内容
+};
+
+// 移除文件
+const handleRemove = (id: string) => {
+  fileList.value = fileList.value.filter(item => item.id !== id);
+};
 
 // 文件上传相关
 const fileList = ref<FileItem[]>([]);
@@ -346,38 +401,21 @@ const handleSubmit = async () => {
   }
 };
 
+
+const copyPopRef = useTemplateRef('copyPopRef')
 // 复制到剪贴板
 const copyToClipboard = () => {
   navigator.clipboard.writeText(codeContent.value)
     .then(() => {
-      window.$message.success('代码已复制到剪贴板');
+
     })
     .catch(() => {
-      window.$message.error('复制失败，请手动复制');
+
+    }).finally(() => {
+      setTimeout(() => copyPopRef.value?.setShow(false), 3000);
     });
 };
 
-// 处理文件上传前验证
-const beforeUpload = (file: File) => {
-  const isEml = file.name.toLowerCase().endsWith('.eml');
-  if (!isEml) {
-    window.$message.error('请上传.eml格式的文件');
-    return false;
-  }
-
-  // 添加文件到列表
-  fileList.value.push({
-    id: Date.now().toString(),
-    name: file.name,
-    file: file
-  });
-  return false; // 阻止自动上传，我们只需要文件内容
-};
-
-// 移除文件
-const handleRemove = (id: string) => {
-  fileList.value = fileList.value.filter(item => item.id !== id);
-};
 
 const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
 </script>

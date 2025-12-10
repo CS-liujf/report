@@ -44,10 +44,13 @@
         <n-divider />
 
         <!-- 代码显示区域 -->
-        <n-card title="生成的代码" header-style="font-size:28px">
+        <n-card>
+          <!-- 手动创建header -->
+          <n-flex justify="space-between" align="center" style="padding-bottom: 20px;">
+            <n-badge value="已过期" color="grey" :offset="[24, 8]" :show="false">
+              <div class="card-header">生成的代码</div>
+            </n-badge>
 
-          <!-- 复制按钮 -->
-          <template #header-extra>
             <n-popover placement="bottom" trigger="click" ref="copyPopRef">
               <template #trigger>
                 <n-button type="success" strong secondary size="small" @click="copyToClipboard"
@@ -70,7 +73,7 @@
                 </n-text>
               </n-flex>
             </n-popover>
-          </template>
+          </n-flex>
 
           <template v-if="codeContent">
             <n-code code="
@@ -327,15 +330,16 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
 
 .main-card {
   max-width: 800px;
-  padding: 0rem 1.5rem; 
+  padding: 0rem 1.5rem;
   margin-top: 6rem;
 }
 
-.copy-button {
-  margin-top: 1rem;
-}
-
-.error-message {
-  margin-top: 1rem;
+.card-header{
+  font-size: 28px;
+  font-weight: var(--n-title-font-weight);
+  transition: color .3s var(--n-bezier);
+  flex: 1;
+  min-width:0;
+  color: var(--n-title-text-color);
 }
 </style>

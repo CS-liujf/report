@@ -71,7 +71,8 @@ function sleep (ms = 1000) {
 
 
         <template #footer>
-          <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank" :theme-overrides="githubButtonThemeOverides">
+          <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank"
+            :theme-overrides="githubButtonThemeOverides">
             fly
             <template #icon>
               <NIcon>
@@ -92,6 +93,7 @@ import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
 import { FormInst, FormRules, ButtonProps } from 'naive-ui';
+import scriptTemplate from '@/scriptTemplate.js?raw';
 
 type ButtonThemeOverrides = NonNullable<ButtonProps['themeOverrides']>
 const githubButtonThemeOverides: ButtonThemeOverrides = {
@@ -329,28 +331,12 @@ const handleSubmit = async () => {
     });
 
     // 生成JavaScript代码（基于index.js模板）
-    const jsonStr = JSON.stringify(formList, null, 2);
-    const jsCode = `// 发送 POST 请求
-      try {
-          // 用json中的数组替换该空数组
-          const seminarInfoArr = ${jsonStr}
-          const postRequest = async (seminarInfo) => {
-              const paramJson = JSON.stringify(seminarInfo);
-              const formData = new URLSearchParams();
-              formData.append('paramJson', paramJson);
-              await fetch('https://graduate.shanghaitech.edu.cn/gsapp/sys/jzxxtjapp/tbgdj/save.do', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded'
-                  },
-                  body: formData
-              })
-          }
-          const postReqArr = seminarInfoArr.map((seminarInfo) => postRequest(seminarInfo))
-          Promise.all(postReqArr)
-      } catch (e) {
-          console.log(e)
-      }`;
+    const formListJsonStr = JSON.stringify(formList, null, 2);
+    // 核心：匹配 "const seminarInfoArr = [];" 整行，替换为带动态数据的代码
+    const jsCode = scriptTemplate.replace(
+      /const seminarInfoArr = \[\];/, // 正则匹配空数组占位行
+      `const seminarInfoArr = ${formListJsonStr};` // 替换为动态数据
+    );
 
     codeContent.value = jsCode;
   } catch (e) {

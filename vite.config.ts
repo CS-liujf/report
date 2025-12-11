@@ -64,6 +64,6 @@ export default defineConfig(({ mode }) => {
     },
 
     // 相对路径部署
-    base: './'
+    base: '/report/',
   }
 })

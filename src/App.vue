@@ -69,7 +69,11 @@
                   <SuccessIcon />
                 </n-icon>
                 <n-text style="font-size: 0.9rem">
-                  代码已复制到剪贴板
+                  代码已复制到剪贴板，
+                  <n-button text tag="a" href="https://graduate.shanghaitech.edu.cn/gsapp/sys/yjsemaphome/portal/index.do" target="_blank" referrerpolicy="no-referrer" type="warning">
+                    立刻去用
+                  </n-button>
+                  <!-- 一定要设置为no-referrer，否则无法正常跳转 -->
                 </n-text>
               </n-flex>
             </n-popover>
@@ -334,12 +338,12 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
   margin-top: 6rem;
 }
 
-.card-header{
+.card-header {
   font-size: 28px;
   font-weight: var(--n-title-font-weight);
   transition: color .3s var(--n-bezier);
   flex: 1;
-  min-width:0;
+  min-width: 0;
   color: var(--n-title-text-color);
 }
 </style>

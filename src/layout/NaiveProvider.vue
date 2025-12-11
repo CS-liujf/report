@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="theme" :theme-overrides="themeOverrides" :hljs="hljs">
+  <n-config-provider :theme="theme" :theme-overrides="themeOverrides" :hljs="hljsValue">
     <n-loading-bar-provider>
       <n-message-provider>
         <n-dialog-provider>
@@ -21,7 +21,9 @@ import ProviderContent from './ProviderContent.vue'
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
 
-hljs.registerLanguage('javascript', javascript);
+//必须这么写，否则build时会报错
+const hljsValue = hljs;
+hljsValue.registerLanguage('javascript', javascript);
 
 const themeOverrides: GlobalThemeOverrides = {
   LoadingBar: {

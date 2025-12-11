@@ -19,18 +19,18 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2. 安装 Node
+      # 2. 安装 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.25.0  # 你本地 pnpm 版本也可以写上
+
+      # 3. 安装 Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.12.0
           cache: 'pnpm'
-
-      # 3. 安装 pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.25.0  # 你本地 pnpm 版本也可以写上
 
       # 4. 安装依赖
       - name: Install dependencies

@@ -3,7 +3,7 @@ name: Deploy Vue3+Vite+pnpm to GitHub Pages
 on:
   push:
     branches:
-      - feature/web
+      - master
 
 permissions:
   contents: read

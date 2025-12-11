@@ -132,7 +132,7 @@ import { isDark } from './utils/switchMode';
 import { FormRules, ButtonProps, UploadFileInfo } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
 
-import { readEml, type Attachment } from 'eml-parse-js';
+import type { Attachment } from 'eml-parse-js'
 import ICAL from 'ical.js';
 
 
@@ -270,6 +270,7 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
     subject: ''
   };
 
+  const { readEml } = await import('eml-parse-js');
   // 解析日历，提取主题、时间和地点
   const text = await emlFile.text();
   readEml(text, (err, data) => {

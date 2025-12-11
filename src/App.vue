@@ -14,7 +14,7 @@
           </n-form-item>
 
           <!-- 文件上传 -->
-          <n-form-item label="解析EML文件" required label-style="font-size: 1.1rem">
+          <n-form-item label="解析EML文件" path="emlFiles" label-style="font-size: 1.1rem">
             <n-upload multiple directory-dnd v-model:file-list="formData.emlFiles">
               <n-upload-dragger>
                 <div style="margin-bottom: 12px">
@@ -35,7 +35,7 @@
           <!-- 确定按钮 -->
           <n-form-item content-style="display: flex; justify-content: center;">
             <n-button type="info" @click="handleSubmit" :loading="loading" style="width: 60%;">
-              确定
+              生成
             </n-button>
           </n-form-item>
         </n-form>
@@ -51,7 +51,7 @@
               <div class="card-header">生成的代码</div>
             </n-badge>
 
-            <n-popover placement="bottom" trigger="click" ref="copyPopRef">
+            <n-popover placement="bottom" trigger="manual" ref="copyPopRef">
               <template #trigger>
                 <n-button type="success" strong secondary size="small" @click="copyToClipboard"
                   :disabled="codeContent.length === 0">
@@ -64,26 +64,41 @@
                 </n-button>
               </template>
 
-              <n-flex align="center" :size="4">
-                <n-icon color="#36AD6AFF" size="1.2rem">
-                  <SuccessIcon />
-                </n-icon>
-                <n-text style="font-size: 0.9rem">
-                  代码已复制到剪贴板，
-                  <n-button text tag="a" href="https://graduate.shanghaitech.edu.cn/gsapp/sys/yjsemaphome/portal/index.do" target="_blank" referrerpolicy="no-referrer" type="warning">
-                    立刻去用
-                  </n-button>
-                  <!-- 一定要设置为no-referrer，否则无法正常跳转 -->
-                </n-text>
-              </n-flex>
+              <!-- 成功复制的提示 -->
+              <template v-if="copySuccess">
+                <n-flex align="center" :size="4">
+                  <n-icon color="#36AD6AFF" size="1.2rem">
+                    <SuccessIcon />
+                  </n-icon>
+                  <n-text style="font-size: 0.9rem">
+                    代码已复制到剪贴板，
+                    <n-button text tag="a"
+                      href="https://graduate.shanghaitech.edu.cn/gsapp/sys/yjsemaphome/portal/index.do" target="_blank"
+                      referrerpolicy="no-referrer" type="warning">
+                      立刻去用
+                    </n-button>
+                    <!-- 一定要设置为no-referrer，否则无法正常跳转 -->
+                  </n-text>
+                </n-flex>
+              </template>
+
+              <!-- 复制失败的提示 -->
+              <template v-else>
+                <n-flex align="center" :size="4">
+                  <n-icon color="#DE576DFF" size="1.2rem">
+                    <AlertIcon />
+                  </n-icon>
+                  <n-text style="font-size: 0.9rem">
+                    复制失败，请手动复制
+                  </n-text>
+                </n-flex>
+              </template>
             </n-popover>
           </n-flex>
 
+          <!-- 代码显示 -->
           <template v-if="codeContent">
-            <n-code code="
-function sleep (ms = 1000) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}" language="javascript" show-line-numbers />
+            <n-code :code="codeContent" language="javascript" show-line-numbers word-wrap />
           </template>
 
           <template v-else>
@@ -109,13 +124,17 @@ function sleep (ms = 1000) {
 </template>
 
 <script setup lang="ts">
-import { ArchiveOutline as ArchiveIcon, Copy as CopyIcon, LogoGithub as GithubIcon, CheckmarkCircle as SuccessIcon } from '@vicons/ionicons5'
+import { ArchiveOutline as ArchiveIcon, Copy as CopyIcon, LogoGithub as GithubIcon, CheckmarkCircle as SuccessIcon, AlertCircle as AlertIcon } from '@vicons/ionicons5'
 import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormInst, FormRules, ButtonProps, type UploadFileInfo } from 'naive-ui';
+import { FormRules, ButtonProps, UploadFileInfo } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
+
+import { readEml, type Attachment } from 'eml-parse-js';
+import ICAL from 'ical.js';
+
 
 type ButtonThemeOverrides = NonNullable<ButtonProps['themeOverrides']>
 const githubButtonThemeOverides: ButtonThemeOverrides = {
@@ -178,12 +197,6 @@ interface FormData {
   emlFiles: UploadFileInfo[];
 }
 
-interface FileItem {
-  id: string;
-  name: string;
-  file: File;
-}
-
 const formRef = useTemplateRef('formRef')
 // 表单数据
 const formData = ref<FormData>({
@@ -196,6 +209,16 @@ const rules: FormRules = {
   studentId: {
     required: true,
     message: '请输入学号',
+    trigger: ['input', 'blur']
+  },
+  emlFiles: {
+    required: true,
+    validator() {
+      if (formData.value.emlFiles.length == 0) {
+        return new Error('请上传邮件');
+      }
+      return true
+    },
     trigger: ['input', 'blur']
   }
 }
@@ -215,7 +238,31 @@ const loading = ref<boolean>(false);
 const codeContent = ref<string>('');
 
 // 解析EML文件内容
-const parseEml = (emlFile: File): SeminarInfo => {
+const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
+  function extractSpeaker(text: string): string | null {
+    if (!text) return null;
+
+    // 两种格式：
+    // 1) Speaker: xxx
+    // 2) 演讲者：xxx
+    // - 忽略大小写 (i)
+    // - 匹配各种半角/全角冒号
+    // - 提取冒号后面的内容直到换行
+    const regexList = [
+      /speaker\s*[:：]\s*(.+)/i,
+      /演讲者\s*[:：]\s*(.+)/i
+    ];
+
+    for (const r of regexList) {
+      const m = text.match(r);
+      if (m && m[1]) {
+        return m[1].trim();
+      }
+    }
+
+    return null;
+  }
+
   const info: SeminarInfo = {
     date: new Date(),
     location: '',
@@ -224,10 +271,43 @@ const parseEml = (emlFile: File): SeminarInfo => {
   };
 
   // 解析日历，提取主题、时间和地点
+  const text = await emlFile.text();
+  readEml(text, (err, data) => {
+    if (!err && data && data.text && data.attachments) {
+      // 从正文提取演讲者
+      const speaker = extractSpeaker(data.text);
+      if (speaker) {
+        info.speaker = speaker;
+      } else {
+        throw Error('邮件解析失败');
+      }
+
+      const calendarPart = data.attachments.find(
+        (att: Attachment) => att.contentType.startsWith("text/calendar")
+      );
 
 
-  // 从正文提取演讲者
+      if (calendarPart) {
+        const icsText = calendarPart.data as string;
+        // 用 ical.js 解析 icsText
+        const jcal = ICAL.parse(icsText);
+        const component = new ICAL.Component(jcal);
+        const event = new ICAL.Event(component.getFirstSubcomponent('vevent')!);
 
+        info.subject = event.summary;
+        info.location = event.location;
+        info.date = event.startDate.toJSDate();
+
+        // console.log("演讲会名字", event.summary);
+        // console.log("开始时间", event.startDate.toJSDate());
+        // console.log("结束时间", event.endDate.toJSDate());
+      } else {
+        throw Error('邮件解析失败');
+      }
+    } else {
+      throw Error('邮件解析失败');
+    }
+  });
   return info;
 };
 
@@ -256,14 +336,18 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
 };
 
 const handleSubmit = async () => {
-  loading.value = true;
   try {
     await validateForm();
-    codeContent.value = '';
-    // 解析所有上传的eml文件
-    const infoList: SeminarInfo[] = [];
+  } catch (e) {
+    return;
+  }
+
+  loading.value = true;
+  // 解析所有上传的eml文件
+  const infoList: SeminarInfo[] = [];
+  try {
     for (const fileItem of formData.value.emlFiles) {
-      const seminarInfo = parseEml(fileItem.file!);
+      const seminarInfo = await parseEml(fileItem.file!);
       infoList.push(seminarInfo);
     }
 
@@ -306,17 +390,19 @@ const handleSubmit = async () => {
 
 
 const copyPopRef = useTemplateRef('copyPopRef')
+const copySuccess = ref(true);
 // 复制到剪贴板
-const copyToClipboard = () => {
-  navigator.clipboard.writeText(codeContent.value)
-    .then(() => {
-
-    })
-    .catch(() => {
-
-    }).finally(() => {
-      setTimeout(() => copyPopRef.value?.setShow(false), 3000);
-    });
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(codeContent.value);
+    copySuccess.value = true;
+  } catch (e) {
+    copySuccess.value = false;
+  }
+  finally {
+    copyPopRef.value?.setShow(true);
+    setTimeout(() => copyPopRef.value?.setShow(false), 3000);
+  };
 };
 
 
@@ -330,12 +416,13 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-top: 6em;
+  padding-bottom: 4em;
 }
 
 .main-card {
-  max-width: 800px;
+  max-width: 880px;
   padding: 0rem 1.5rem;
-  margin-top: 6rem;
 }
 
 .card-header {

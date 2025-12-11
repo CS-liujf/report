@@ -14,9 +14,15 @@ importers:
       axios:
         specifier: ^1.13.2
         version: 1.13.2
+      eml-parse-js:
+        specifier: 1.2.0-beta.1
+        version: 1.2.0-beta.1
       highlight.js:
         specifier: ^11.11.1
         version: 11.11.1
+      ical.js:
+        specifier: ^2.2.1
+        version: 2.2.1
       naive-ui:
         specifier: ^2.43.2
         version: 2.43.2(vue@3.5.25(typescript@5.9.3))
@@ -892,6 +898,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@sinonjs/text-encoding@0.7.3':
+    resolution: {integrity: sha512-DE427ROAphMQzU4ENbliGYrBSYPXF+TtLg9S8vzeA+OF4ZKzoDdzfL8sxuMUGS/lgRhM6j1URSk9ghf7Xo1tyA==}
+
   '@trysound/sax@0.2.0':
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
@@ -1387,6 +1396,9 @@ packages:
   electron-to-chromium@1.5.267:
     resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
+  eml-parse-js@1.2.0-beta.1:
+    resolution: {integrity: sha512-sFlcUwNmIjPD7yR0/OK4XEN9V+/Np3S6SE348LNgwgAlgA1jswba+cTNxN/Rbkz+CHPyBSfh3Ccamp6lLWz0Lw==}
+
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
 
@@ -1651,6 +1663,9 @@ packages:
   htmlparser2@3.10.1:
     resolution: {integrity: sha512-IgieNijUMbkDovyoKObU1DUhm1iwNYE/fuifEoEHfd1oZKZDaONBSkal7Y01shxsM49R4XaMdGez3WnF9UfiCQ==}
 
+  ical.js@2.2.1:
+    resolution: {integrity: sha512-yK/UlPbEs316igb/tjRgbFA8ZV75rCsBJp/hWOatpyaPNlgw0dGDmU+FoicOcwX4xXkeXOkYiOmCqNPFpNPkQg==}
+
   image-size@0.5.5:
     resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
@@ -1840,6 +1855,9 @@ packages:
 
   js-base64@2.6.4:
     resolution: {integrity: sha512-pZe//GGmwJndub7ZghVHz7vjb2LgC1m8B07Au3eYqeqv9emhESByMXxaEgkUkEqJe87oBbSniGYoQNIBklc7IQ==}
+
+  js-base64@3.7.8:
+    resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -3519,6 +3537,8 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.53.3':
     optional: true
 
+  '@sinonjs/text-encoding@0.7.3': {}
+
   '@trysound/sax@0.2.0': {}
 
   '@types/estree@1.0.8': {}
@@ -4089,6 +4109,11 @@ snapshots:
 
   electron-to-chromium@1.5.267: {}
 
+  eml-parse-js@1.2.0-beta.1:
+    dependencies:
+      '@sinonjs/text-encoding': 0.7.3
+      js-base64: 3.7.8
+
   emoji-regex@8.0.0: {}
 
   emojis-list@3.0.0: {}
@@ -4440,6 +4465,8 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
+  ical.js@2.2.1: {}
+
   image-size@0.5.5: {}
 
   inherits@2.0.4: {}
@@ -4621,6 +4648,8 @@ snapshots:
       picocolors: 1.1.1
 
   js-base64@2.6.4: {}
+
+  js-base64@3.7.8: {}
 
   js-tokens@4.0.0: {}
 

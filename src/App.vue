@@ -129,7 +129,7 @@ import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormRules, ButtonProps, UploadFileInfo } from 'naive-ui';
+import { FormRules, ButtonProps, UploadFileInfo, FormValidationError } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
 
 import type { Attachment } from 'eml-parse-js'
@@ -224,7 +224,7 @@ const rules: FormRules = {
 }
 
 const validateForm = async () => {
-  await formRef.value?.validate((errors) => {
+  await formRef.value?.validate((errors: FormValidationError[] | undefined) => {
     if (errors) {
       window.$message.error(errors[0][0].message!);
     }

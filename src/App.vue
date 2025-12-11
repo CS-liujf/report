@@ -413,6 +413,7 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
 <style scoped>
 .container {
   min-height: 100vh;
+  box-sizing: border-box;
   background-color: v-bind(backgroundColor);
   display: flex;
   flex-direction: column;

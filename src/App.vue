@@ -15,7 +15,8 @@
 
           <!-- 文件上传 -->
           <n-form-item label="解析EML文件" path="emlFiles" label-style="font-size: 1.1rem">
-            <n-upload multiple directory-dnd v-model:file-list="formData.emlFiles">
+            <n-upload multiple v-model:file-list="formData.emlFiles" :custom-request="customRequest"
+              @before-upload="beforeUpload">
               <n-upload-dragger>
                 <div style="margin-bottom: 12px">
                   <n-icon size="48" :depth="3">
@@ -61,15 +62,18 @@ import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import CodeCard from '@/components/CodeCard/CodeCard.vue';
 import Footer from '@/components/Footer/Footer.vue';
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormRules, UploadFileInfo, FormValidationError } from 'naive-ui';
+import { FormRules, UploadFileInfo, FormValidationError, UploadCustomRequestOptions } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
 
 import type { Attachment } from 'eml-parse-js'
-import ICAL from 'ical.js';
 
-
+//预热加载
+onMounted(() => {
+  import('ical.js');
+  import("eml-parse-js");
+});
 
 // 定义类型接口(翻译原先的python脚本)
 interface SeminarInfo {
@@ -132,6 +136,15 @@ const formData = ref<FormData>({
   emlFiles: []
 });
 
+async function beforeUpload(data: {
+  file: UploadFileInfo
+}) {
+  if (!data.file.file?.name.toLowerCase().endsWith('.eml')) {
+    return false;
+  }
+  return true;
+}
+
 
 const rules: FormRules = {
   studentId: {
@@ -142,7 +155,7 @@ const rules: FormRules = {
   emlFiles: {
     required: true,
     validator() {
-      if (formData.value.emlFiles.length == 0) {
+      if (seminarInfoArr.value.length == 0) {
         return new Error('请上传邮件');
       }
       return true
@@ -159,11 +172,13 @@ const validateForm = async () => {
   })
 }
 
-
-
-// 生成发送请求的代码
-const loading = ref<boolean>(false);
-const codeContent = ref<string>('');
+const idSeminarInfoMap = new Map<string, SeminarInfo>();
+const seminarInfoArr = computed(() => {
+  return formData.value.emlFiles.filter(file => file.status === 'finished') // 筛选状态为finished的文件
+    .map(file => {
+      return idSeminarInfoMap.get(file.id)!; //使用!否则会返回undefined
+    })
+})
 
 // 解析EML文件内容
 const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
@@ -199,6 +214,8 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
   };
 
   const { readEml } = await import('eml-parse-js');
+  const { default: ICAL } = await import('ical.js');
+
   // 解析日历，提取主题、时间和地点
   const text = await emlFile.text();
   readEml(text, (err, data) => {
@@ -240,6 +257,38 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
   return info;
 };
 
+const customRequest = (uploadFileOpts: UploadCustomRequestOptions) => {
+  const getRandomInt = (min: number, max: number): number => {
+    // 处理边界：确保 min <= max
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  const {
+    onError, onFinish, onProgress,
+    file: fileInfo,
+  } = uploadFileOpts;
+
+  const delay = getRandomInt(180, 500);
+  //使用延迟，避免文件列表显示卡住
+  setTimeout(async () => {
+    onProgress({ percent: getRandomInt(10, 80) });
+    try {
+      const seminarInfo = await parseEml(fileInfo.file!);
+      idSeminarInfoMap.set(fileInfo.id, seminarInfo);
+      onFinish();
+    } catch {
+      onError();
+    }
+  }, delay);
+}
+
+
+// 生成发送请求的代码
+const loading = ref<boolean>(false);
+const codeContent = ref<string>('');
+
 // 获取学年学期信息
 const getAcademicTerm = (date: Date): AcademicTerm => {
   const year = date.getFullYear();
@@ -272,16 +321,9 @@ const handleSubmit = async () => {
   }
 
   loading.value = true;
-  // 解析所有上传的eml文件
-  const infoList: SeminarInfo[] = [];
   try {
-    for (const fileItem of formData.value.emlFiles) {
-      const seminarInfo = await parseEml(fileItem.file!);
-      infoList.push(seminarInfo);
-    }
-
     // 生成表单数据
-    const formList: SeminarInfoForm[] = infoList.map(info => {
+    const formList: SeminarInfoForm[] = seminarInfoArr.value.map(info => {
       const academicTerm = getAcademicTerm(info.date);
       return {
         WID: "",

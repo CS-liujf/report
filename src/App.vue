@@ -33,6 +33,21 @@
             </n-upload>
           </n-form-item>
 
+          <n-form-item label="是否提交" label-style="font-size: 1.1rem">
+            <n-radio-group v-model:value="formData.reviewStatus">
+              <n-radio value="0" size="large">
+                <n-text style="font-size: 1rem">
+                  仅存草稿
+                </n-text>
+              </n-radio>
+              <n-radio value="10" size="large">
+                <n-text style="font-size: 1rem">
+                  提交导师审核
+                </n-text>
+              </n-radio>
+            </n-radio-group>
+          </n-form-item>
+
           <!-- 确定按钮 -->
           <n-form-item content-style="display: flex; justify-content: center;">
             <n-button type="info" @click="handleSubmit" :loading="loading" style="width: 60%;">
@@ -98,8 +113,8 @@ interface SeminarInfoForm {
   WID: string;
   /** 审核状态显示值 */
   SHZT_DISPLAY: string;
-  /** 审核状态编码 */
-  SHZT: string;
+  /** 审核状态编码 (10表示提交给导师审核，0表示存草稿) */
+  SHZT: '10' | '0';
 
   TBLX: string;
 
@@ -127,13 +142,15 @@ interface SeminarInfoForm {
 interface FormData {
   studentId: string;
   emlFiles: UploadFileInfo[];
+  reviewStatus: '0' | '10';
 }
 
-const formRef = useTemplateRef('formRef')
+const formRef = useTemplateRef('formRef');
 // 表单数据
 const formData = ref<FormData>({
   studentId: '',
-  emlFiles: []
+  emlFiles: [],
+  reviewStatus: '0',
 });
 
 async function beforeUpload(data: {
@@ -328,7 +345,7 @@ const handleSubmit = async () => {
       return {
         WID: "",
         SHZT_DISPLAY: "",
-        SHZT: "0",
+        SHZT: `${formData.value.reviewStatus}`,
         TBLX: "",
         XH: formData.value.studentId,
         FJ: "",

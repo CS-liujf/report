@@ -139,7 +139,7 @@ interface SeminarInfoForm {
   SFSYYY: string;
 }
 
-interface FormData {
+interface FormDataModel {
   studentId: string;
   emlFiles: UploadFileInfo[];
   reviewStatus: '0' | '10';
@@ -147,7 +147,7 @@ interface FormData {
 
 const formRef = useTemplateRef('formRef');
 // 表单数据
-const formData = ref<FormData>({
+const formData = ref<FormDataModel>({
   studentId: '',
   emlFiles: [],
   reviewStatus: '0',

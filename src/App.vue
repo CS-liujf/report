@@ -48,15 +48,7 @@
 
 
         <template #footer>
-          <n-button text size="small" type="default" tag="a" href="https://github.com/CS-liujf/report" target="_blank"
-            :theme-overrides="githubButtonThemeOverides">
-            fly
-            <template #icon>
-              <NIcon>
-                <GithubIcon />
-              </NIcon>
-            </template>
-          </n-button>
+          <Footer />
         </template>
       </n-card>
     </div>
@@ -64,24 +56,19 @@
 </template>
 
 <script setup lang="ts">
-import { ArchiveOutline as ArchiveIcon, LogoGithub as GithubIcon } from '@vicons/ionicons5'
+import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
 import NaiveProvider from '@/layout/NaiveProvider.vue';
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import CodeCard from '@/components/CodeCard/CodeCard.vue';
+import Footer from '@/components/Footer/Footer.vue';
 import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
-import { FormRules, ButtonProps, UploadFileInfo, FormValidationError } from 'naive-ui';
+import { FormRules, UploadFileInfo, FormValidationError } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
 
 import type { Attachment } from 'eml-parse-js'
 import ICAL from 'ical.js';
 
-
-type ButtonThemeOverrides = NonNullable<ButtonProps['themeOverrides']>
-const githubButtonThemeOverides: ButtonThemeOverrides = {
-  textColorTextFocus: '#FCB040FF',
-  textColorTextHover: '#FCB040FF'
-}
 
 
 // 定义类型接口(翻译原先的python脚本)

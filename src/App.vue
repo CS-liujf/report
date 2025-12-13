@@ -96,6 +96,7 @@ interface SeminarInfo {
   location: string;
   speaker: string;
   subject: string;
+  isEnglish: boolean;
 }
 
 
@@ -223,11 +224,18 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
     return null;
   }
 
+  function hasChinese(str: string): boolean {
+    // 正则匹配基本中文字符
+    const chineseReg = /[\u4e00-\u9fa5]/;
+    return chineseReg.test(str);
+  }
+
   const info: SeminarInfo = {
     date: new Date(),
     location: '',
     speaker: '',
-    subject: ''
+    subject: '',
+    isEnglish: true
   };
 
   const { readEml } = await import('eml-parse-js');
@@ -260,6 +268,7 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
         info.subject = event.summary;
         info.location = event.location;
         info.date = event.startDate.toJSDate();
+        info.isEnglish = !hasChinese(info.subject);
 
         // console.log("演讲会名字", event.summary);
         // console.log("开始时间", event.startDate.toJSDate());
@@ -331,12 +340,6 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
 };
 
 const handleSubmit = async () => {
-  function hasChinese(str: string): boolean {
-    // 正则匹配基本中文字符
-    const chineseReg = /[\u4e00-\u9fa5]/;
-    return chineseReg.test(str);
-  }
-
   try {
     await validateForm();
   } catch (e) {
@@ -361,8 +364,8 @@ const handleSubmit = async () => {
         BGSJ: info.date.toISOString().slice(0, 10),
         BGDD: info.location,
         ZJR: info.speaker,
-        SFSYYY_DISPLAY: hasChinese(info.subject) ? "否" : "是",
-        SFSYYY: hasChinese(info.subject) ? "0" : "1",
+        SFSYYY_DISPLAY: info.isEnglish ? "是" : "否",
+        SFSYYY: info.isEnglish ? "1" : "0",
       };
     });
 

@@ -331,6 +331,12 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
 };
 
 const handleSubmit = async () => {
+  function hasChinese(str: string): boolean {
+    // 正则匹配基本中文字符
+    const chineseReg = /[\u4e00-\u9fa5]/;
+    return chineseReg.test(str);
+  }
+
   try {
     await validateForm();
   } catch (e) {
@@ -355,8 +361,8 @@ const handleSubmit = async () => {
         BGSJ: info.date.toISOString().slice(0, 10),
         BGDD: info.location,
         ZJR: info.speaker,
-        SFSYYY_DISPLAY: "是",
-        SFSYYY: "1"
+        SFSYYY_DISPLAY: hasChinese(info.subject) ? "否" : "是",
+        SFSYYY: hasChinese(info.subject) ? "0" : "1",
       };
     });
 

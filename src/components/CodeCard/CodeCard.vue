@@ -2,7 +2,7 @@
   <!-- 代码显示区域 -->
   <n-card>
     <!-- 手动创建header -->
-    <n-flex justify="space-between" align="center" style="padding-bottom: 20px;">
+    <n-flex justify="space-between" align="center" style="padding-bottom: 1.25rem;">
       <n-badge value="已过期" color="grey" :offset="[24, 8]" :show="stale">
         <div class="card-header">生成的代码</div>
       </n-badge>
@@ -92,7 +92,7 @@ const copyToClipboard = async () => {
 </script>
 <style lang="css" scoped>
 .card-header {
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: var(--n-title-font-weight);
   transition: color .3s var(--n-bezier);
   flex: 1;

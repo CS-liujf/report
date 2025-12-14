@@ -2,7 +2,7 @@
 <template>
   <naive-provider>
     <div class="container">
-      <n-card title="学术报告记录生成工具" header-style="font-size:42px;" footer-style="display: flex; justify-content: center;"
+      <n-card title="学术报告记录生成工具" header-style="font-size:2.7rem;" footer-style="display: flex; justify-content: center;"
         class="main-card" hoverable>
         <template #header-extra>
           <mode-switch size="36" />
@@ -245,7 +245,7 @@ const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
 }
 
 .main-card {
-  max-width: 880px;
+  max-width: 55rem;
   padding: 0rem 1.5rem;
 }
 </style>

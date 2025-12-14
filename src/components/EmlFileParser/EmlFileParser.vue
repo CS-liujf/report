@@ -1,7 +1,7 @@
 <template>
   <n-upload multiple v-model:file-list="fileList" :custom-request="customRequest" @before-upload="beforeUpload">
     <n-upload-dragger>
-      <div style="margin-bottom: 12px">
+      <div style="margin-bottom: 0.75rem">
         <n-icon size="48" :depth="3">
           <ArchiveIcon />
         </n-icon>
@@ -9,7 +9,7 @@
       <n-text style="font-size: 1rem">
         点击上传或拖放邮件文件到该区域解析
       </n-text>
-      <n-p depth="3" style="margin: 4px 0 0 0; font-size: 0.9rem">
+      <n-p depth="3" style="margin: 0.25rem 0 0 0; font-size: 0.9rem">
         支持上传多个.eml格式的邮件文件
       </n-p>
     </n-upload-dragger>

@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { UploadFileInfo, UploadCustomRequestOptions } from 'naive-ui';
-import type { Attachment } from 'eml-parse-js';
+import type { Attachment, ReadedEmlJson } from 'eml-parse-js';
 import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5';
 
 //预热加载
@@ -66,6 +66,20 @@ const beforeUpload = (data: { file: UploadFileInfo }) =>
   data.file.file?.name.toLowerCase().endsWith('.eml') ?? false;
 
 const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
+  async function readEmlAsync(text: string): Promise<ReadedEmlJson | undefined> {
+    const { readEml } = await import('eml-parse-js');
+
+    return new Promise((resolve, reject) => {
+      readEml(text, (err, data) => {
+        if (err) {
+          reject(err instanceof Error ? err : new Error(String(err)));
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  }
+
   function extractSpeaker(text: string): string | null {
     if (!text) return null;
 
@@ -83,17 +97,78 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
     for (const r of regexList) {
       const m = text.match(r);
       if (m && m[1]) {
-        return m[1].trim();
+        return m[1].trim().replace(/[。．\.；;，,]+$/, ''); //去掉句末的标点
       }
     }
 
     return null;
   }
 
+  function extractLocation(text: string): string | null {
+    if (!text) return null;
+
+    // 两种格式：
+    // 1) Location: xxx
+    // 2) 地点：xxx
+    // - 忽略大小写 (i)
+    // - 匹配半角 / 全角冒号
+    // - 提取冒号后直到换行
+    const regexList = [
+      /location\s*[:：]\s*(.+)/i,
+      /地点\s*[:：]\s*(.+)/i,
+    ];
+
+    for (const r of regexList) {
+      const m = text.match(r);
+      if (m?.[1]) {
+        return m[1].trim().replace(/[。．\.；;，,]+$/, ''); //去掉句末的标点
+      }
+    }
+
+    return null;
+  }
+
+
+  function getCalendarAttachment(
+    attachments?: Attachment[]
+  ): Attachment | null {
+    if (!attachments?.length) return null;
+
+    return (
+      attachments.find(att =>
+        att.contentType?.startsWith('text/calendar')
+      ) ?? null
+    );
+  }
+
   function hasChinese(str: string): boolean {
     // 正则匹配基本中文字符
     const chineseReg = /[\u4e00-\u9fa5]/;
     return chineseReg.test(str);
+  }
+
+  function parseByContent(emlFile: ReadedEmlJson, info: SeminarInfo) {
+    if (emlFile.date instanceof Date) {
+      info.date = emlFile.date;
+    } else {
+      info.date = new Date(emlFile.date);
+    }
+
+    info.subject = emlFile.subject;
+    const location = extractLocation(emlFile.text!);
+    info.location = location ? location : '';
+  }
+  async function parseByAttachment(calendarAttachment: Attachment, info: SeminarInfo) {
+    // 用 ical.js 解析 icsText
+    const { default: ICAL } = await import('ical.js');
+    const icsText = calendarAttachment.data as string;
+    const jcal = ICAL.parse(icsText);
+    const component = new ICAL.Component(jcal);
+    const event = new ICAL.Event(component.getFirstSubcomponent('vevent')!);
+
+    info.subject = event.summary;
+    info.location = event.location;
+    info.date = event.startDate.toJSDate();
   }
 
   const info: SeminarInfo = {
@@ -104,47 +179,30 @@ const parseEml = async (emlFile: File): Promise<SeminarInfo> => {
     isEnglish: true
   };
 
-  const { readEml } = await import('eml-parse-js');
-  const { default: ICAL } = await import('ical.js');
-
   // 解析日历，提取主题、时间和地点
   const text = await emlFile.text();
-  readEml(text, (err, data) => {
-    if (!err && data && data.text && data.attachments) {
-      // 从正文提取演讲者
-      const speaker = extractSpeaker(data.text);
-      if (speaker) {
-        info.speaker = speaker;
-      } else {
-        throw Error('邮件解析失败');
-      }
+  const data = await readEmlAsync(text);
+  // 正文必须存在
+  if (!data?.text) {
+    throw new Error('邮件解析失败：正文缺失');
+  }
 
-      const calendarPart = data.attachments.find(
-        (att: Attachment) => att.contentType.startsWith("text/calendar")
-      );
+  const speaker = extractSpeaker(data.text);
+  if (!speaker) {
+    throw new Error('邮件解析失败：未找到演讲者');
+  }
+  info.speaker = speaker;
 
-      if (calendarPart) {
-        const icsText = calendarPart.data as string;
-        // 用 ical.js 解析 icsText
-        const jcal = ICAL.parse(icsText);
-        const component = new ICAL.Component(jcal);
-        const event = new ICAL.Event(component.getFirstSubcomponent('vevent')!);
+  //解析时间、地点和主题
+  const calendarAttachment = getCalendarAttachment(data.attachments);
+  if (calendarAttachment) {
+    await parseByAttachment(calendarAttachment, info);
+  } else {
+    parseByContent(data, info);
+  }
 
-        info.subject = event.summary;
-        info.location = event.location;
-        info.date = event.startDate.toJSDate();
-        info.isEnglish = !hasChinese(info.subject);
+  info.isEnglish = !hasChinese(info.subject);
 
-        // console.log("演讲会名字", event.summary);
-        // console.log("开始时间", event.startDate.toJSDate());
-        // console.log("结束时间", event.endDate.toJSDate());
-      } else {
-        throw Error('邮件解析失败');
-      }
-    } else {
-      throw Error('邮件解析失败');
-    }
-  });
   return info;
 };
 

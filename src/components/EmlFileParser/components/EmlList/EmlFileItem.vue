@@ -8,7 +8,7 @@
         </n-flex>
 
         <n-icon size="1.2rem">
-            <TrashBinIcon @click.prevent="emit('delete',props.file.id)"/>
+            <TrashBinIcon @click.prevent="emit('delete', props.file.id)" />
         </n-icon>
     </n-flex>
 
@@ -17,7 +17,8 @@
         <n-card style="max-width: 600px" title="详情" :bordered="false" size="medium">
             <n-form ref="formRef" :model="formValue" :rules="rules" label-placement="left" :label-width="80">
                 <n-form-item label="会议名" path="subject">
-                    <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea" :autosize="{minRows:1}"/>
+                    <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea"
+                        :autosize="{ minRows: 1 }" />
                 </n-form-item>
 
                 <n-form-item label="演讲者" path="speaker">
@@ -54,7 +55,7 @@
 import { MailOutline as MailIcon, TrashBinOutline as TrashBinIcon } from '@vicons/ionicons5';
 import { type UploadedFile } from "../EmlUpload/EmlUpload.vue";
 import type { Attachment, ReadedEmlJson } from 'eml-parse-js';
-import { useTemplateRef, ref, watch } from 'vue';
+import { useTemplateRef, ref, watchEffect } from 'vue';
 import { FormRules } from 'naive-ui';
 
 
@@ -77,17 +78,7 @@ export interface ParsedInfo {
     status: 'pending' | 'parsing' | 'successful' | 'failed';
 }
 
-
-const parsedInfo = ref<ParsedInfo>({
-    info: {
-        speaker: '',
-        location: '',
-        date: new Date(),
-        subject: '',
-        isEnglish: true
-    },
-    status: 'pending'
-})
+const parsedInfoModel = defineModel<ParsedInfo>('parsed-info', { required: true });
 
 export interface ParsedFile {
     id: string
@@ -97,9 +88,7 @@ export interface ParsedFile {
 
 interface Emits {
     (e: 'delete', id: string): void
-    (e: 'parse', id: string, parsedInfo: ParsedInfo): void
 }
-
 const emit = defineEmits<Emits>();
 
 
@@ -241,16 +230,14 @@ const parseEml = async (emlFile: File): Promise<void> => {
 
     info.isEnglish = !hasChinese(info.subject);
 
-    parsedInfo.value.status = 'successful';
-    parsedInfo.value.info = info;
+    parsedInfoModel.value.status = 'successful';
+    parsedInfoModel.value.info = info;
 
     return;
 };
 
-watch(parsedInfo, (newValue) => {
-    emit('parse', props.file.id, newValue);
-}, { deep: true });
 
+//表单处理
 const formRef = useTemplateRef('formRef');
 const formValue = ref({
     speaker: '',
@@ -258,6 +245,10 @@ const formValue = ref({
     date: Date.now(),
     subject: '',
     isEnglish: true
+})
+watchEffect(() => {
+    const newValue = parsedInfoModel.value;
+    formValue.value = { ...(newValue.info), date: newValue.info.date.getTime() };
 })
 
 const rules: FormRules = {
@@ -271,17 +262,15 @@ const rules: FormRules = {
 
 async function confirm() {
     await formRef.value?.validate();
-    parsedInfo.value.info = { ...formValue.value, date: new Date(formValue.value.date) };
+    parsedInfoModel.value.info = { ...formValue.value, date: new Date(formValue.value.date) };
     showModal.value = false;
 }
 
 const showModal = ref(false);
 
 
-parseEml(props.file.file).then(() => {
-    const newValue = parsedInfo.value;
-    formValue.value = { ...(newValue.info), date: newValue.info.date.getTime() };
-});
+// watcheffect自动同步formValue的变化
+parseEml(props.file.file);
 
 </script>
 

@@ -11,14 +11,14 @@
         </n-flex>
 
         <!-- 放具体的列表 -->
-        <EmlFileItem v-for="file in rawFilesModel" :key="file.id" :file="file" @delete="deleteFile"
-            @parse="(id, newValue) => idToParsedInfo[id] = newValue" />
+        <EmlFileItem v-for="file in rawFilesModel" :key="file.id" v-model:parsed-info="idToParsedInfo[file.id]"
+            :file="file" @delete="deleteFile" />
 
     </n-flex>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { type UploadedFile } from '../EmlUpload/EmlUpload.vue';
 import EmlFileItem, { SeminarInfo, type ParsedInfo } from './EmlFileItem.vue';
 
@@ -29,8 +29,32 @@ function deletRawFiles(id: string) {
 }
 
 
-
+// 定义初始 ParsedInfo 工厂函数（可复用）
+const createInitialParsedInfo = (): ParsedInfo => ({
+    info: {
+        speaker: '',
+        location: '',
+        date: new Date(),
+        subject: '',
+        isEnglish: true
+    },
+    status: 'pending'
+});
 const idToParsedInfo = ref<Record<string, ParsedInfo>>({});
+
+// 响应 rawFilesModel 的变化，自动同步 idToParsedInfo
+watchEffect(() => {
+  const currentIds = new Set(rawFilesModel.value.map(f => f.id))
+  const existingIds = new Set(Object.keys(idToParsedInfo.value))
+
+  // 1. 为新增的 id 添加初始状态
+  for (const id of currentIds) {
+    if (!existingIds.has(id)) {
+      idToParsedInfo.value[id] = createInitialParsedInfo()
+    }
+  }
+})
+
 function deleteParsedInfo(id: string) {
     delete idToParsedInfo.value[id];
 }

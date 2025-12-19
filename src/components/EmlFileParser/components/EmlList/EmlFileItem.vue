@@ -13,42 +13,39 @@
     </n-flex>
 
     <!-- 弹窗 -->
-    <n-modal v-model:show="showModal">
-        <n-card style="max-width: 600px" title="详情" :bordered="false" size="medium">
-            <n-form ref="formRef" :model="formValue" :rules="rules" label-placement="left" :label-width="80">
-                <n-form-item label="会议名" path="subject">
-                    <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea"
-                        :autosize="{ minRows: 1 }" />
-                </n-form-item>
+    <n-modal v-model:show="showModal" preset="card" title="详情" :bordered="false" size="medium" style="max-width: 30rem" draggable>
+        <n-form ref="formRef" :model="formValue" :rules="rules" label-placement="left" :label-width="80">
+            <n-form-item label="会议名" path="subject">
+                <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea"
+                    :autosize="{ minRows: 1 }" />
+            </n-form-item>
 
-                <n-form-item label="演讲者" path="speaker">
-                    <n-input v-model:value="formValue.speaker" placeholder="输入演讲者名字" />
-                </n-form-item>
+            <n-form-item label="演讲者" path="speaker">
+                <n-input v-model:value="formValue.speaker" placeholder="输入演讲者名字" />
+            </n-form-item>
 
-                <n-form-item label="时间" path="date" required>
-                    <n-date-picker style="width: 100%;" v-model:value="formValue.date" type="date"
-                        placeholder="请选择会议时间" />
-                </n-form-item>
+            <n-form-item label="时间" path="date" required>
+                <n-date-picker style="width: 100%;" v-model:value="formValue.date" type="date" placeholder="请选择会议时间" />
+            </n-form-item>
 
-                <n-form-item label="地点" path="location">
-                    <n-input v-model:value="formValue.location" placeholder="输入会议地点" />
-                </n-form-item>
+            <n-form-item label="地点" path="location">
+                <n-input v-model:value="formValue.location" placeholder="输入会议地点" />
+            </n-form-item>
 
-                <n-form-item label="使用英语" path="isEnglish">
-                    <n-radio-group v-model:value="formValue.isEnglish">
-                        <n-radio :value="true">是</n-radio>
-                        <n-radio :value="false">否</n-radio>
-                    </n-radio-group>
-                </n-form-item>
-            </n-form>
+            <n-form-item label="使用英语" path="isEnglish">
+                <n-radio-group v-model:value="formValue.isEnglish">
+                    <n-radio :value="true">是</n-radio>
+                    <n-radio :value="false">否</n-radio>
+                </n-radio-group>
+            </n-form-item>
+        </n-form>
 
-            <template #footer>
-                <n-flex justify="end" align="center">
-                    <n-button size="small" tertiary @click="showModal = false">取消</n-button>
-                    <n-button size="small" secondary type="warning" @click="confirm">确认</n-button>
-                </n-flex>
-            </template>
-        </n-card>
+        <template #footer>
+            <n-flex justify="end" align="center">
+                <n-button size="small" tertiary @click="showModal = false">取消</n-button>
+                <n-button size="small" secondary type="warning" @click="confirm">确认</n-button>
+            </n-flex>
+        </template>
     </n-modal>
 </template>
 <script setup lang="ts">

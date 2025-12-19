@@ -6,7 +6,7 @@
             </n-text>
             <n-flex justify="space-around" size="medium">
                 <n-button size="small" tertiary type="warning" @click="deleteAll">清空</n-button>
-                <!-- <n-button size="small" tertiary type="info">查看</n-button> -->
+                <n-button size="small" tertiary type="info" @click="showModal = true">总览</n-button>
             </n-flex>
         </n-flex>
 
@@ -15,12 +15,52 @@
             :file="file" @delete="deleteFile" />
 
     </n-flex>
+
+
+    <n-modal v-model:show="showModal" title="总览" preset="card" :bordered="true" size="medium" style="width: 30rem">
+        <n-scrollbar style="max-height: 90rem">
+            <template v-for="(formValue, index) in formSeminarInfoArr">
+                <n-form ref="formRefs" :model="formValue" :rules="rules" label-placement="left" :label-width="80"
+                    style="width: 96%;">
+                    <n-form-item label="会议名" path="subject">
+                        <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea"
+                            :autosize="{ minRows: 1 }" />
+                    </n-form-item>
+
+                    <n-form-item label="演讲者" path="speaker">
+                        <n-input v-model:value="formValue.speaker" placeholder="输入演讲者名字" />
+                    </n-form-item>
+
+                    <n-form-item label="时间" path="date" required>
+                        <n-date-picker style="width: 100%;" v-model:value="formValue.date" type="date"
+                            placeholder="请选择会议时间" />
+                    </n-form-item>
+
+                    <n-form-item label="地点" path="location">
+                        <n-input v-model:value="formValue.location" placeholder="输入会议地点" />
+                    </n-form-item>
+
+                    <n-form-item label="使用英语" path="isEnglish">
+                        <n-radio-group v-model:value="formValue.isEnglish">
+                            <n-radio :value="true">是</n-radio>
+                            <n-radio :value="false">否</n-radio>
+                        </n-radio-group>
+                    </n-form-item>
+                </n-form>
+                <n-divider v-if="index !== formSeminarInfoArr.length - 1" />
+            </template>
+        </n-scrollbar>
+        <template #footer>
+            尾部
+        </template>
+    </n-modal>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, watchEffect } from 'vue';
+import { ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { type UploadedFile } from '../EmlUpload/EmlUpload.vue';
 import EmlFileItem, { SeminarInfo, type ParsedInfo } from './EmlFileItem.vue';
+import { FormRules, FormInst } from 'naive-ui';
 
 
 const rawFilesModel = defineModel<UploadedFile[]>('raw-files', { required: true });
@@ -44,15 +84,15 @@ const idToParsedInfo = ref<Record<string, ParsedInfo>>({});
 
 // 响应 rawFilesModel 的变化，自动同步 idToParsedInfo
 watchEffect(() => {
-  const currentIds = new Set(rawFilesModel.value.map(f => f.id))
-  const existingIds = new Set(Object.keys(idToParsedInfo.value))
+    const currentIds = new Set(rawFilesModel.value.map(f => f.id))
+    const existingIds = new Set(Object.keys(idToParsedInfo.value))
 
-  // 1. 为新增的 id 添加初始状态
-  for (const id of currentIds) {
-    if (!existingIds.has(id)) {
-      idToParsedInfo.value[id] = createInitialParsedInfo()
+    // 1. 为新增的 id 添加初始状态
+    for (const id of currentIds) {
+        if (!existingIds.has(id)) {
+            idToParsedInfo.value[id] = createInitialParsedInfo()
+        }
     }
-  }
 })
 
 function deleteParsedInfo(id: string) {
@@ -85,6 +125,64 @@ function deleteAll() {
     idToParsedInfo.value = {};
 }
 
+
+const showModal = ref(false);
+
+interface FormSemniarInfo {
+    speaker: string,
+    location: string,
+    date: number,
+    subject: string,
+    isEnglish: boolean
+}
+const formSeminarInfoArr = ref<FormSemniarInfo[]>([]);
+//根据idToParsedInfo创建表单数组
+watchEffect(() => {
+    formSeminarInfoArr.value = rawFilesModel.value
+        .map(file => idToParsedInfo.value[file.id])
+        .filter((parsed): parsed is ParsedInfo =>
+            parsed?.status === 'successful'
+        )
+        .map(parsed => ({
+            ...parsed.info,
+            date: parsed.info.date.getTime()
+        }));
+});
+
+const rules: FormRules = {
+    subject: { required: true, message: '请输入会议名', trigger: 'blur' },
+    speaker: { required: true, message: '请输入演讲者', trigger: 'blur' },
+    location: { required: true, message: '请输入会议地点' },
+    isEnglish: { required: true, message: '请选择是否使用英语' }
+}
+
+const formRefs = useTemplateRef('formRefs');
+function validateForm(form: FormInst): Promise<void> {
+    return new Promise((resolve, reject) => {
+        form.validate((errors) => {
+            if (errors) {
+                reject(errors);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+// async function confirm() {
+//     await Promise.all(
+//         formRefs.value!.map(form => validateForm(form!))
+//     );
+//     const newParsedInfos: ParsedInfo[] = formSeminarInfoArr.value.map(formValue => ({
+//         info: {
+//             ...formValue,
+//             date: new Date(formValue.date) // number → Date
+//         },
+//         status: 'successful' as const
+//     }));
+
+//     parsedInfoModel.value = newParsedInfos;
+//     showModal.value = false;
+// }
 </script>
 
 <style lang="css" module></style>

@@ -7,7 +7,7 @@
         <template #header-extra>
           <mode-switch size="36" />
         </template>
-        <n-form label-placement="left" :rules="rules" ref="formRef" :model="formData">
+        <n-form :label-placement="labelPlacement" :rules="rules" ref="formRef" :model="formData">
           <!-- 学号输入 -->
           <n-form-item label="学号" path="studentId" label-style="font-size: 1.1rem">
             <n-input v-model:value="formData.studentId" placeholder="请输入您的学号" />
@@ -66,6 +66,7 @@ import { computed, ref, useTemplateRef } from 'vue';
 import { isDark } from './utils/switchMode';
 import { FormRules, FormValidationError } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
+import { useWindowSize } from '@vueuse/core'
 
 
 interface AcademicTerm {
@@ -228,8 +229,12 @@ const handleSubmit = async () => {
   }
 };
 
-
+// 样式相关的设置
 const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));
+const { width } = useWindowSize();
+const labelPlacement = computed(() => {
+  return width.value >= 768 ? 'left' : 'top'
+});
 </script>
 
 <style scoped>

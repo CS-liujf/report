@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
+    "@vueuse/core": "^14.1.0",
     "eml-parse-js": "1.2.0-beta.1",
     "highlight.js": "^11.11.1",
     "ical.js": "^2.2.1",

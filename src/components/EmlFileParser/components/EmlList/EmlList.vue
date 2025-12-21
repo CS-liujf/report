@@ -6,7 +6,7 @@
             </n-text>
             <n-flex justify="space-around" size="medium">
                 <n-button size="small" tertiary type="warning" @click="deleteAll">清空</n-button>
-                <n-button size="small" tertiary type="info" @click="showModal = true">总览</n-button>
+                <n-button size="small" tertiary type="info" @click="openModal">总览</n-button>
             </n-flex>
         </n-flex>
 
@@ -18,8 +18,8 @@
 
 
     <n-modal v-model:show="showModal" title="总览" preset="card" :bordered="true" size="medium" style="width: 30rem">
-        <n-scrollbar style="max-height: 90rem">
-            <template v-for="(formValue, index) in formSeminarInfoArr">
+        <n-scrollbar style=" max-height: 80vh; min-height: 100px;">
+            <template v-for="({ info: formValue }, index) in formSeminarInfoArr">
                 <n-form ref="formRefs" :model="formValue" :rules="rules" label-placement="left" :label-width="80"
                     style="width: 96%;">
                     <n-form-item label="会议名" path="subject">
@@ -51,13 +51,16 @@
             </template>
         </n-scrollbar>
         <template #footer>
-            尾部
+            <n-flex justify="end" align="center">
+                <n-button size="small" tertiary @click="showModal = false">取消</n-button>
+                <n-button size="small" secondary type="warning" @click="confirm">确认</n-button>
+            </n-flex>
         </template>
     </n-modal>
 </template>
 
 <script lang="ts" setup>
-import { ref, useTemplateRef, watch, watchEffect } from 'vue';
+import { computed, ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { type UploadedFile } from '../EmlUpload/EmlUpload.vue';
 import EmlFileItem, { SeminarInfo, type ParsedInfo } from './EmlFileItem.vue';
 import { FormRules, FormInst } from 'naive-ui';
@@ -129,25 +132,35 @@ function deleteAll() {
 const showModal = ref(false);
 
 interface FormSemniarInfo {
-    speaker: string,
-    location: string,
-    date: number,
-    subject: string,
-    isEnglish: boolean
+    id: string,
+    info: {
+        speaker: string,
+        location: string,
+        date: number,
+        subject: string,
+        isEnglish: boolean
+    }
 }
 const formSeminarInfoArr = ref<FormSemniarInfo[]>([]);
 //根据idToParsedInfo创建表单数组
-watchEffect(() => {
+function openModal() {
     formSeminarInfoArr.value = rawFilesModel.value
-        .map(file => idToParsedInfo.value[file.id])
-        .filter((parsed): parsed is ParsedInfo =>
-            parsed?.status === 'successful'
+        .map(file => {
+            const parsed = idToParsedInfo.value[file.id];
+            return { id: file.id, parsed };
+        })
+        .filter((item): item is { id: string; parsed: ParsedInfo } =>
+            item.parsed?.status === 'successful'
         )
-        .map(parsed => ({
-            ...parsed.info,
-            date: parsed.info.date.getTime()
+        .map(({ id, parsed }) => ({
+            id,
+            info: {
+                ...parsed.info,
+                date: parsed.info.date.getTime(), // Date → number
+            },
         }));
-});
+    showModal.value = true;
+}
 
 const rules: FormRules = {
     subject: { required: true, message: '请输入会议名', trigger: 'blur' },
@@ -168,21 +181,22 @@ function validateForm(form: FormInst): Promise<void> {
         });
     });
 }
-// async function confirm() {
-//     await Promise.all(
-//         formRefs.value!.map(form => validateForm(form!))
-//     );
-//     const newParsedInfos: ParsedInfo[] = formSeminarInfoArr.value.map(formValue => ({
-//         info: {
-//             ...formValue,
-//             date: new Date(formValue.date) // number → Date
-//         },
-//         status: 'successful' as const
-//     }));
+async function confirm() {
+    await Promise.all(
+        formRefs.value!.map(form => validateForm(form!))
+    );
+    // 对idToParsedInfo进行了watch，会自动向父组件传递最新的seminarInfo数组
+    formSeminarInfoArr.value.forEach(({ id, info: formValue }) => {
+        idToParsedInfo.value[id] = {
+            info: {
+                ...formValue,
+                date: new Date(formValue.date) // number → Date
+            }, status: 'successful'
+        };
+    });
 
-//     parsedInfoModel.value = newParsedInfos;
-//     showModal.value = false;
-// }
+    showModal.value = false;
+}
 </script>
 
-<style lang="css" module></style>
+<style lang="css" scoped></style>

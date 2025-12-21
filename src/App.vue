@@ -35,7 +35,7 @@
 
           <!-- 确定按钮 -->
           <n-form-item content-style="display: flex; justify-content: center;">
-            <n-button type="info" @click="handleSubmit" :loading="loading" style="width: 60%;">
+            <n-button type="info" @click="handleSubmit" :loading="loading" :style="{width: buttonWidth}">
               生成
             </n-button>
           </n-form-item>
@@ -235,6 +235,10 @@ const { width } = useWindowSize();
 const labelPlacement = computed(() => {
   return width.value >= 768 ? 'left' : 'top'
 });
+
+const buttonWidth = computed(()=>{
+  return width.value >= 768 ? '60%' : '85%'
+})
 </script>
 
 <style scoped>
@@ -252,5 +256,12 @@ const labelPlacement = computed(() => {
 .main-card {
   max-width: 55rem;
   padding: 0rem 1.5rem;
+}
+
+/* 手机端（通常 < 768px） */
+@media (max-width: 767px) {
+  .main-card {
+    padding: 0 0.125rem;
+  }
 }
 </style>

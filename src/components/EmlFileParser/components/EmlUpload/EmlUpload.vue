@@ -2,27 +2,28 @@
     <div class="upload" @click="triggerInput" @dragover.prevent="handleDragOver" @dragenter.prevent="handleDragEnter"
         @dragleave.prevent="handleDragLeave" @drop.prevent="handleDrop">
         <input ref="fileInputRef" @change="handleChange" type="file" class="upload-file-input" multiple></input>
-        <div class="upload-trigger">
-            <div class="upload-dragger">
-                <div style="margin-bottom: 0.75rem">
-                    <n-icon size="48" :depth="3">
-                        <ArchiveIcon />
-                    </n-icon>
-                </div>
-                <n-text style="font-size: 1rem">
-                    点击上传或拖放邮件文件到该区域解析
-                </n-text>
-                <n-p depth="3" style="margin: 0.25rem 0 0 0; font-size: 0.9rem">
-                    支持上传多个.eml格式的邮件文件
-                </n-p>
+
+        <div class="upload-dragger" :class="{ 'dragenter': isDragOver }">
+            <div style="margin-bottom: 0.75rem">
+                <n-icon size="48" :depth="3">
+                    <ArchiveIcon />
+                </n-icon>
             </div>
+            <n-text style="font-size: 1rem">
+                点击上传或拖放邮件文件到该区域解析
+            </n-text>
+            <n-p depth="3" style="margin: 0.25rem 0 0 0; font-size: 0.9rem">
+                支持上传多个.eml格式的邮件文件
+            </n-p>
         </div>
+
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue';
+import { ref, useTemplateRef, computed } from 'vue';
 import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5';
+import { isDark } from '@/utils/switchMode';
 
 interface Props {
     accept: (file: File) => boolean
@@ -96,8 +97,10 @@ function handleDrop(event: DragEvent) {
     const files = Array.from(event.dataTransfer?.files || [])
     validateAndEmit(files)
 }
-
-
+// 边框样式
+const borderColor = computed(() => (isDark.value ? 'rgba(255, 255, 255, 0.24)' : 'rgb(224, 224, 230)'))
+const borderHoverColor = computed(() => isDark.value ? '#63e2b7' : '#18a058')
+const backgroundColor = computed(() => (isDark.value ? 'rgba(255, 255, 255, 0.06)' : 'rgb(250, 250, 252)'))
 </script>
 
 <style lang="css" scoped>
@@ -105,20 +108,8 @@ function handleDrop(event: DragEvent) {
     width: 100%;
     --n-bezier: cubic-bezier(.4, 0, .2, 1);
     --n-border-radius: 3px;
-    --n-dragger-border: 1px dashed rgba(255, 255, 255, 0.24);
-    --n-dragger-border-hover: 1px dashed #63e2b7;
-    --n-dragger-color: rgba(255, 255, 255, 0.06);
-    --n-font-size: 14px;
-    --n-item-color-hover: rgba(255, 255, 255, 0.09);
-    --n-item-color-hover-error: rgba(232, 128, 128, 0.09);
-    --n-item-disabled-opacity: 0.38;
-    --n-item-icon-color: rgba(255, 255, 255, 0.38);
-    --n-item-text-color: rgba(255, 255, 255, 0.82);
-    --n-item-text-color-error: #e88080;
-    --n-item-text-color-success: #63e2b7;
-    --n-line-height: 1.6;
-    --n-item-border-image-card-error: 1px solid #e88080;
-    --n-item-border-image-card: 1px solid rgba(255, 255, 255, 0.24);
+    --n-dragger-border: 1px dashed v-bind(borderColor);
+    --n-dragger-color: v-bind(backgroundColor);
 }
 
 .upload-file-input {
@@ -126,14 +117,6 @@ function handleDrop(event: DragEvent) {
     width: 0;
     height: 0;
     opacity: 0;
-}
-
-.n-upload-trigger {
-    display: block;
-    /* width: 100%; */
-    box-sizing: border-box;
-    opacity: 1;
-    transition: opacity .3s var(--n-bezier);
 }
 
 .upload-dragger {
@@ -147,5 +130,13 @@ function handleDrop(event: DragEvent) {
     transition: opacity .3s var(--n-bezier), border-color .3s var(--n-bezier), background-color .3s var(--n-bezier);
     background-color: var(--n-dragger-color);
     border: var(--n-dragger-border);
+}
+
+.upload-dragger:hover {
+    border-color: v-bind(borderHoverColor);
+}
+
+.dragenter {
+    border-color: v-bind(borderHoverColor);
 }
 </style>

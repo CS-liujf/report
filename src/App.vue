@@ -137,7 +137,7 @@ const rules: FormRules = {
       }
       return true
     },
-    trigger: ['input', 'blur']
+    // trigger: ['input', 'blur'] 必须注释，否则会议详情弹窗里的switch会触发此校验
   }
 }
 

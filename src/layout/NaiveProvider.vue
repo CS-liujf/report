@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="theme" :theme-overrides="themeOverrides" :hljs="hljsValue">
+  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme="theme" :theme-overrides="themeOverrides" :hljs="hljsValue">
     <n-loading-bar-provider>
       <n-message-provider>
         <n-dialog-provider>
@@ -20,6 +20,8 @@ import ProviderContent from './ProviderContent.vue'
 
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
+
+import { zhCN, dateZhCN } from 'naive-ui'
 
 //必须这么写，否则build时会报错
 const hljsValue = hljs;

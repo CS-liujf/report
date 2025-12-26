@@ -1,19 +1,47 @@
 <template>
-    <n-flex :wrap="false" justify="space-between" align="center" class="item-container" @click="showModal = true">
-        <n-flex :wrap="false" align="center" :size="[6, 0]">
-            <n-icon size="1.2rem">
-                <MailIcon />
-            </n-icon>
-            <n-text style="font-size: 0.9rem;">{{ props.file.file.name }}</n-text>
+    <n-flex :wrap="false" vertical justify="center" class="item-container" @click="showModal = true">
+        <n-flex :wrap="false" justify="space-between" align="center">
+            <n-flex :wrap="false" align="center" :size="[6, 0]">
+                <n-icon size="1.2rem" :class="{ 'errorFile': parsedInfoModel.status === 'failed' }">
+                    <MailIcon />
+                </n-icon>
+                <n-text style="font-size: 0.9rem;"
+                    :style="{ color: showColor, transition: 'color 0.1s cubic-bezier(.4, 0, .2, 1)' }">{{
+                        props.file.file.name }}</n-text>
+
+            </n-flex>
+
+            <template v-if="parsedInfoModel.status === 'failed'">
+                <n-flex justify="center" align="center">
+                    <n-icon class="close" size="1.6rem">
+                        <CloseOutIcon @click.prevent="emit('delete', props.file.id)"></CloseOutIcon>
+                    </n-icon>
+                    <n-icon class="reload" size="1.2rem">
+                        <RefreshIcon @click.prevent.stop="reFreshFn"></RefreshIcon>
+                    </n-icon>
+                </n-flex>
+            </template>
+            <template v-else>
+                <n-icon size="1.2rem" class="trashBin">
+                    <TrashBinIcon @click.prevent="emit('delete', props.file.id)" />
+                </n-icon>
+            </template>
+
+
         </n-flex>
 
-        <n-icon size="1.2rem">
-            <TrashBinIcon @click.prevent="emit('delete', props.file.id)" />
-        </n-icon>
+        <!-- 进度条 -->
+        <n-progress v-if="parsedInfoModel.status === 'parsing'" type="line" processing :percentage="percentage" :show-indicator="false" color="skyblue" :height='4'
+            style="margin-top: -6px;">
+        </n-progress>
+
+
+
     </n-flex>
 
     <!-- 弹窗 -->
-    <n-modal v-model:show="showModal" preset="card" title="详情" :bordered="false" size="medium" style="max-width: 30rem" draggable>
+    <n-modal v-model:show="showModal" preset="card" title="详情" :bordered="false" size="medium" style="max-width: 30rem"
+        draggable>
         <n-form ref="formRef" :model="formValue" :rules="rules" label-placement="left" :label-width="80">
             <n-form-item label="会议名" path="subject">
                 <n-input v-model:value="formValue.subject" placeholder="输入会议名" type="textarea"
@@ -49,11 +77,13 @@
     </n-modal>
 </template>
 <script setup lang="ts">
-import { MailOutline as MailIcon, TrashBinOutline as TrashBinIcon } from '@vicons/ionicons5';
+import { MailOutline as MailIcon, TrashBinOutline as TrashBinIcon, CloseOutline as CloseOutIcon, Refresh as RefreshIcon } from '@vicons/ionicons5';
 import { type UploadedFile } from "../EmlUpload/EmlUpload.vue";
 import type { Attachment, ReadedEmlJson } from 'eml-parse-js';
-import { useTemplateRef, ref, watchEffect } from 'vue';
+import { useTemplateRef, ref, watchEffect, computed } from 'vue';
 import { FormRules } from 'naive-ui';
+import { isDark } from '@/utils/switchMode';
+import { useThemeVars } from 'naive-ui'
 
 
 // 用于接收原始文件
@@ -266,9 +296,57 @@ async function confirm() {
 const showModal = ref(false);
 
 
-// watcheffect自动同步formValue的变化
-parseEml(props.file.file);
+// 错误邮件的颜色改变
+// 进度条
+// 文件名颜色
+const showColor = ref('')
+const getRandomInt = (min: number, max: number): number => {
+    // 处理边界
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min + 1)) + min
+}
+const percentage = ref(0)
+const themeVars = useThemeVars()
+const getResult = async () => {
+    parsedInfoModel.value.status = 'parsing'
+    percentage.value = getRandomInt(10, 80)
+    try {
+        await parseEml(props.file.file)
+        parsedInfoModel.value.status = 'successful'
+        percentage.value = 100
+        showColor.value = themeVars.value.successColorHover
+        setTimeout(() => {
+            showColor.value = ''
+        }, 2000)
+    } catch (err) {
+        parsedInfoModel.value.status = 'failed'
+        percentage.value = 0
+        showColor.value = themeVars.value.errorColor
+    }
+}
 
+getResult()
+
+const fileColor = computed(() => (isDark.value ? '#e88080' : '#d03050'))
+
+// 背景色
+const listColor = computed(() => {
+    if (parsedInfoModel.value.status === 'failed') {
+        return isDark.value ? '#2e2c2c' : '#faeded'
+    } else {
+        return isDark.value ? 'rgba(255, 255, 255, 0.09)' : 'rgb(243, 243, 245)'
+    }
+}
+)
+// 垃圾桶背景色
+const trashBinColor = computed(() => (isDark.value ? 'rgba(255, 255, 255, .12)' : 'rgba(194, 194, 194, 1)'))
+
+
+// 刷新函数
+const reFreshFn = async () => {
+    await getResult()
+}
 </script>
 
 <style lang="css" scoped>
@@ -278,5 +356,44 @@ parseEml(props.file.file);
     padding-bottom: 0.4rem;
     padding-left: 0.4rem;
     padding-right: 1.2rem;
+    border-radius: 3px;
+
+    .trashBin {
+        padding: 3px 3px;
+        border-radius: 3px;
+    }
+
+    .close {
+        padding: 2px 2px;
+        border-radius: 3px;
+        color: v-bind(fileColor);
+
+    }
+
+    .reload {
+        padding: 4px 4px;
+        border-radius: 3px;
+        color: v-bind(fileColor)
+    }
+}
+
+.item-container:hover {
+    background-color: v-bind(listColor);
+}
+
+.item-container .trashBin:hover {
+    background-color: v-bind(trashBinColor);
+}
+
+.errorFile {
+    color: v-bind(showColor);
+}
+
+.close:hover {
+    background-color: v-bind(trashBinColor);
+}
+
+.reload:hover {
+    background-color: v-bind(trashBinColor);
 }
 </style>

@@ -162,7 +162,7 @@ const codeContent = ref<string>('');
 // 获取学年学期信息
 const getAcademicTerm = (date: Date): AcademicTerm => {
   const year = date.getFullYear();
-  const month = date.getMonth();
+  const month = date.getMonth() + 1; // getMonth从0开始计数
 
   let termStr: string, termCode: string;
 

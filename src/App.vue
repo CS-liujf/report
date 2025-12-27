@@ -45,7 +45,7 @@
         <n-divider />
 
         <!-- 代码显示区 -->
-        <CodeCard :code="codeContent" :stale="false" />
+        <CodeCard :code="codeContent" :stale="isStale" />
 
 
         <template #footer>
@@ -62,7 +62,7 @@ import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import EmlFileParser, { type SeminarInfo } from '@/components/EmlFileParser/EmlFileParser.vue';
 import CodeCard from '@/components/CodeCard/CodeCard.vue';
 import Footer from '@/components/Footer/Footer.vue';
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { isDark } from './utils/switchMode';
 import { FormRules, FormValidationError } from 'naive-ui';
 import scriptTemplate from '@/scriptTemplate.js?raw';
@@ -226,8 +226,24 @@ const handleSubmit = async () => {
     console.error('处理错误:', e);
   } finally {
     loading.value = false;
+
+    isStale.value = false;
+    firstGenerated.value = false;
   }
 };
+
+
+const isStale = ref(false); // 初始为 stale（未生成）
+const firstGenerated = ref(true); // 用于防止生成后立即被标记 stale
+watch(
+  () => formData.value,
+  () => {
+    if (!firstGenerated.value) {
+      isStale.value = true;
+    }
+  },
+  { deep: true, immediate: false }
+);
 
 // 样式相关的设置
 const backgroundColor = computed(() => (isDark.value ? '#101014' : '#f6f9f8'));

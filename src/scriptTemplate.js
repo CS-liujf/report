@@ -17,5 +17,7 @@
     await Promise.all(postReqArr);
   } catch (e) {
     console.log(e);
+  } finally {
+    console.log('done');
   }
 })();

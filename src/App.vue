@@ -166,16 +166,20 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
 
   let termStr: string, termCode: string;
 
-  if (month >= 9 || month < 2) {
-    // 9月到来年1月：第一学期
+  if (month >= 9) {
+    // 9月到12月：year 第一学期
     termStr = `${year}-${year + 1}学年 第一学期`;
     termCode = `${year * 10 + 1}`; // y1
+  if (month == 1) {
+    // 1月：year-1 第一学期
+    termStr = `${year - 1}-${year}学年 第一学期`;
+    termCode = `${(year - 1) * 10 + 1}`; // y1
   } else if (month === 7 || month === 8) {
-    // 7月和8月：第三学期
+    // 7月和8月：year-1 第三学期
     termStr = `${year - 1}-${year}学年 第三学期`;
     termCode = `${(year - 1) * 10 + 3}`; // (y-1)3
   } else {
-    // 2月到6月：第二学期
+    // 2月到6月：year-1 第二学期
     termStr = `${year - 1}-${year}学年 第二学期`;
     termCode = `${(year - 1) * 10 + 2}`; // (y-1)2
   }

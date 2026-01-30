@@ -170,7 +170,7 @@ const getAcademicTerm = (date: Date): AcademicTerm => {
     // 9月到12月：year 第一学期
     termStr = `${year}-${year + 1}学年 第一学期`;
     termCode = `${year * 10 + 1}`; // y1
-  if (month == 1) {
+  } else if (month == 1) {
     // 1月：year-1 第一学期
     termStr = `${year - 1}-${year}学年 第一学期`;
     termCode = `${(year - 1) * 10 + 1}`; // y1
